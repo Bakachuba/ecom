@@ -3,7 +3,25 @@ from django.contrib.auth import logout, authenticate, login
 from django.shortcuts import render, redirect
 
 from store.forms import SignUpForm
-from store.models import Product
+from store.models import Product, Category
+
+
+def category(request, foo):
+    foo = foo.replace('-', ' ')
+    try:
+        category = Category.objects.get(name=foo)
+        products = Product.objects.filter(category=category)
+        return render(request, 'store/category.html',
+                      {'products': products, 'category': category})
+    except:
+        messages.error(request, 'That Category Does Not Exist')
+        return redirect('home')
+
+
+def product(request, pk):
+    product = Product.objects.get(id=pk)
+    return render(request, 'store/product.html',
+                  {'product': product})
 
 
 def home(request):
