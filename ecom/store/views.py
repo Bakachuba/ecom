@@ -3,9 +3,27 @@ from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 
-from store.forms import SignUpForm, UpdateUserForm, ChangePasswordForm
-from store.models import Product, Category
+from store.forms import SignUpForm, UpdateUserForm, ChangePasswordForm, UserInfoForm
+from store.models import Product, Category, Profile
 
+
+def update_info(request):
+    if request.user.is_authenticated:
+        current_user = Profile.objects.get(user__id=request.user.id)
+        form = UserInfoForm(request.POST or None,
+                                   instance=current_user)
+
+        if form.is_valid():
+            form.save()
+
+            messages.success(request, 'Your info has been updated')
+            return redirect('home')
+        return render(request, 'store/update_info.html',
+                      {'form': form})
+
+    else:
+        messages.error(request, 'You must be logged in to access that page')
+        return redirect('home')
 
 def update_password(request):
     if request.user.is_authenticated:
@@ -119,8 +137,8 @@ def register_user(request):
             password = form.cleaned_data['password1']
             user = authenticate(username=username, password=password)
             login(request, user)
-            messages.success(request, 'You have registered successfully!')
-            return redirect('home')
+            messages.success(request, 'Username Created - Please Fill out your user info below')
+            return redirect('update_info')
         else:
             messages.error(request, 'Whoops! There was a problem with your registery, please try again')
             return redirect('register')
