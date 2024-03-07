@@ -1,17 +1,35 @@
 from django.contrib import messages
 from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.shortcuts import render, redirect
 
 from store.forms import SignUpForm, UpdateUserForm, ChangePasswordForm, UserInfoForm
 from store.models import Product, Category, Profile
 
 
+def search(request):
+    # determine if they filled out the form
+
+    if request.method == 'POST':
+        searched = request.POST['searched']
+        # query the products db model
+        searched = Product.objects.filter(Q(name__icontains=searched) | Q(description__icontains=searched))
+        # test for null
+        if not searched:
+            messages.error(request, 'Product not found')
+            return render(request, 'store/search.html', {})
+        else:
+            return render(request, 'store/search.html', {'searched': searched})
+    else:
+        return render(request, 'store/search.html', {})
+
+
 def update_info(request):
     if request.user.is_authenticated:
         current_user = Profile.objects.get(user__id=request.user.id)
         form = UserInfoForm(request.POST or None,
-                                   instance=current_user)
+                            instance=current_user)
 
         if form.is_valid():
             form.save()
@@ -24,6 +42,7 @@ def update_info(request):
     else:
         messages.error(request, 'You must be logged in to access that page')
         return redirect('home')
+
 
 def update_password(request):
     if request.user.is_authenticated:
