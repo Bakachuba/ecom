@@ -3,8 +3,32 @@ from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 
-from store.forms import SignUpForm, UpdateUserForm
+from store.forms import SignUpForm, UpdateUserForm, ChangePasswordForm
 from store.models import Product, Category
+
+
+def update_password(request):
+    if request.user.is_authenticated:
+        current_user = request.user
+        # Did they fill out the form
+        if request.method == 'POST':
+            form = ChangePasswordForm(current_user, request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Your password has been updated!')
+                return redirect('update_user')
+
+            else:
+                for error in list(form.errors.values()):
+                    messages.error(request, error)
+                    return redirect('update_password')
+        else:
+            form = ChangePasswordForm(current_user)
+            return render(request, 'store/update_password.html', {'form': form})
+
+    else:
+        messages.error(request, 'You must be logged in to access that page')
+        return redirect('home')
 
 
 def update_user(request):
