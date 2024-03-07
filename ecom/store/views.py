@@ -1,15 +1,37 @@
 from django.contrib import messages
 from django.contrib.auth import logout, authenticate, login
+from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 
-from store.forms import SignUpForm
+from store.forms import SignUpForm, UpdateUserForm
 from store.models import Product, Category
+
+
+def update_user(request):
+    if request.user.is_authenticated:
+        current_user = User.objects.get(id=request.user.id)
+        user_form = UpdateUserForm(request.POST or None,
+                                   instance=current_user)
+
+        if user_form.is_valid():
+            user_form.save()
+
+            login(request, current_user)
+            messages.success(request, 'User account has been updated')
+            return redirect('home')
+        return render(request, 'store/update_user.html',
+                      {'user_form': user_form})
+
+    else:
+        messages.error(request, 'You must be logged in to access that page')
+        return redirect('home')
 
 
 def category_summary(request):
     categories = Category.objects.all()
     return render(request, 'store/category_summary.html',
                   {'categories': categories})
+
 
 def category(request, foo):
     foo = foo.replace('-', ' ')
