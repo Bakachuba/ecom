@@ -6,6 +6,11 @@ from store.forms import SignUpForm
 from store.models import Product, Category
 
 
+def category_summary(request):
+    categories = Category.objects.all()
+    return render(request, 'store/category_summary.html',
+                  {'categories': categories})
+
 def category(request, foo):
     foo = foo.replace('-', ' ')
     try:
