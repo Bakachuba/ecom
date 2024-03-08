@@ -1,9 +1,12 @@
+import json
+
 from django.contrib import messages
 from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.shortcuts import render, redirect
 
+from cart.cart import Cart
 from store.forms import SignUpForm, UpdateUserForm, ChangePasswordForm, UserInfoForm
 from store.models import Product, Category, Profile
 
@@ -129,6 +132,22 @@ def login_user(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+
+            # do some shopping cart stuff
+            current_user = Profile.objects.get(user__id=request.user.id)
+            # get the saved cart from db
+            saved_cart = current_user.old_cart
+            # convert db str to python dictionary
+            if saved_cart:
+                # convert to dictionary using json
+                converted_cart = json.loads(saved_cart)
+                # add the loaded cart dictionary to our session
+                # get the cart
+                cart = Cart(request)
+                # loop thru the cart and add the items from the db
+                for key, value in converted_cart.items():
+                    cart.db_add(product=key, quantity=value)
+
             messages.success(request, 'You Have Been Logged In')
             return redirect('home')
 
