@@ -7,6 +7,8 @@ from django.db.models import Q
 from django.shortcuts import render, redirect
 
 from cart.cart import Cart
+from payment.forms import ShippingForm
+from payment.models import ShippingAddress
 from store.forms import SignUpForm, UpdateUserForm, ChangePasswordForm, UserInfoForm
 from store.models import Product, Category, Profile
 
@@ -30,17 +32,27 @@ def search(request):
 
 def update_info(request):
     if request.user.is_authenticated:
+        # Get current user
         current_user = Profile.objects.get(user__id=request.user.id)
+        # Get current user's shipping info
+        shipping_user = ShippingAddress.objects.get(user__id=request.user.id)
+
+        # Get original user form
         form = UserInfoForm(request.POST or None,
                             instance=current_user)
 
-        if form.is_valid():
+        # Get user's shipping form
+        shipping_form = ShippingForm(request.POST or None, instance=shipping_user)
+        if form.is_valid() or shipping_form.is_valid():
+            # Save original form
             form.save()
+            # Save shipping form
+            shipping_form.save()
 
             messages.success(request, 'Your info has been updated')
             return redirect('home')
         return render(request, 'store/update_info.html',
-                      {'form': form})
+                      {'form': form, 'shipping_form': shipping_form})
 
     else:
         messages.error(request, 'You must be logged in to access that page')
